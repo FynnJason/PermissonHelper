@@ -19,19 +19,70 @@ import java.util.List;
  */
 public class PermissionHelper {
 
-    public void setApplyListener(ApplyListener applyListener) {
-        mApplyListener = applyListener;
+    // 只会在mustApply中使用
+    public PermissionHelper(SimpleListener applyListener) {
+        mSimpleListener = applyListener;
     }
 
-    public interface ApplyListener {
+    // 只会在mustApplyDiy使用
+    public PermissionHelper(FullListener fullListener) {
+        mFullListener = fullListener;
+    }
+
+    public interface SimpleListener {
         void success();
     }
 
-    private ApplyListener mApplyListener;
+    private SimpleListener mSimpleListener;
+
+    public interface FullListener {
+        void success();
+
+        void fail();
+    }
+
+    private FullListener mFullListener;
 
 
     /**
-     * 必须申请的单个或多个权限；
+     * 用户拒绝申请权限后，只提供失败回调，具体逻辑自己来写
+     *
+     * @param permissions
+     */
+    public void mustApplyDiy(@PermissionConstants.Permission final String... permissions) {
+        PermissionUtils.permission(permissions)
+                .rationale(new PermissionUtils.OnRationaleListener() {
+                    @Override
+                    public void rationale(ShouldRequest shouldRequest) {
+                        // 当用户第一次拒绝后再次申请权限就会进入这个回调
+                        shouldRequest.again(true);
+                    }
+                })
+                .callback(new PermissionUtils.FullCallback() {
+                    @Override
+                    public void onGranted(List<String> permissionsGranted) {
+                        // 当用户全部权限申请成功后进入这个回调，这里自己写一个回调，做其他逻辑操作
+                        mFullListener.success();
+                    }
+
+                    @Override
+                    public void onDenied(List<String> permissionsDeniedForever, List<String> permissionsDenied) {
+                        // 当用户拒绝申请权限时
+                        // 如果用户多次拒绝申请，要让用户主动到设置界面去开启权限
+                        if (!permissionsDeniedForever.isEmpty()) {
+                            showOpenAppSettingDialog();
+                        } else {
+                            // 只提供失败回调，具体处理自己写
+                            mFullListener.fail();
+                        }
+                    }
+                })
+                .request();
+    }
+
+
+    /**
+     * 必须申请的单个或多个权限(方法自带拒绝后处理)
      * 用户如果拒绝申请，那就会弹出提示框，并要求用户重新申请；
      * 这种方法保证了权限能够申请，是比较推荐的方法；
      * 当然还有一种方式是，当用户使用的某个权限时再申请，不过这个逻辑需要开发者自己来实现；
@@ -51,7 +102,7 @@ public class PermissionHelper {
                     @Override
                     public void onGranted(List<String> permissionsGranted) {
                         // 当用户全部权限申请成功后进入这个回调，这里自己写一个回调，做其他逻辑操作
-                        mApplyListener.success();
+                        mSimpleListener.success();
                     }
 
                     @Override

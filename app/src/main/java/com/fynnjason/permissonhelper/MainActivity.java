@@ -13,8 +13,6 @@ public class MainActivity extends AppCompatActivity {
     private Button btnnormal;
     private Button btnmust;
 
-    private PermissionHelper mPermissionHelper;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -23,20 +21,17 @@ public class MainActivity extends AppCompatActivity {
         this.btnmust = findViewById(R.id.btn_must);
         this.btnnormal = findViewById(R.id.btn_normal);
 
-        mPermissionHelper = new PermissionHelper();
-
-        mPermissionHelper.setApplyListener(new PermissionHelper.ApplyListener() {
-            @Override
-            public void success() {
-                Log.e("MainActivity", "权限都申请完成");
-            }
-        });
 
         // 普通申请单个或多个权限
         btnnormal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mPermissionHelper.normalApply(PermissionConstants.STORAGE
+                new PermissionHelper(new PermissionHelper.SimpleListener() {
+                    @Override
+                    public void success() {
+                        Log.e("MainActivity", "权限都申请完成");
+                    }
+                }).normalApply(PermissionConstants.STORAGE
                         , PermissionConstants.PHONE
                         , PermissionConstants.LOCATION
                         , PermissionConstants.CAMERA);
@@ -47,7 +42,12 @@ public class MainActivity extends AppCompatActivity {
         btnmust.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mPermissionHelper.mustApply(PermissionConstants.STORAGE
+                new PermissionHelper(new PermissionHelper.SimpleListener() {
+                    @Override
+                    public void success() {
+                        Log.e("MainActivity", "权限都申请完成");
+                    }
+                }).mustApply(PermissionConstants.STORAGE
                         , PermissionConstants.PHONE
                         , PermissionConstants.LOCATION
                         , PermissionConstants.CAMERA);
